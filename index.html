@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LunaCare App</title>
+  <style>
+    /* ===== 全局CSS变量（颜色方案） ===== */
+    :root {
+      --bg-color: #F8EDED;         /* 背景基色：玫瑰暖色 */
+      --shadow-light: #FFFFFF;     /* 高光阴影颜色 */
+      --shadow-dark: #E8C9C9;      /* 暗部阴影颜色 */
+      --accent-color: #D88C8C;     /* 强调色：玫瑰红 */
+      --text-color: #555555;       /* 默认文字颜色 */
+      --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    /* 基础重置与布局 */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #CCCCCC;  /* 页面背景 (模拟手机外部背景) */
+      display: flex; align-items: center; justify-content: center;
+      min-height: 100vh;
+      font-family: var(--font-family);
+    }
+    #app {
+      position: relative;
+      width: 375px;
+      height: 812px;
+      background: var(--bg-color);
+      border-radius: 20px;
+      box-shadow: 0 0 20px rgba(0,0,0,0.2);  /* 手机外形投影 */
+      overflow: hidden;
+      color: var(--text-color);
+    }
+    /* ===== 各页面 Section 样式 ===== */
+    section {
+      width: 100%; height: 100%;
+      padding: 16px 20px 80px;  /* 底部留出导航栏高度 */
+      display: none;
+      overflow-y: auto;
+    }
+    section.active { display: block; }
+    section h2 {
+      font-size: 1.25rem;
+      margin-bottom: 12px;
+    }
+    /* ===== 首页 (Home) 页面样式 ===== */
+    .quote-card {
+      background: var(--bg-color);
+      border-radius: 12px;
+      padding: 16px;
+      margin: 8px 0;
+      box-shadow: 5px 5px 10px var(--shadow-dark),
+                  -5px -5px 10px var(--shadow-light);
+    }
+    .quote-card blockquote {
+      font-style: italic;
+      line-height: 1.5;
+      position: relative;
+      padding-left: 20px;
+    }
+    .quote-card blockquote::before {
+      content: "“";
+      font-size: 2rem;
+      position: absolute;
+      left: 5px;
+      top: -5px;
+      color: var(--accent-color);
+    }
+    .quote-card blockquote::after {
+      content: "”";
+      font-size: 2rem;
+      position: absolute;
+      right: 5px;
+      bottom: -5px;
+      color: var(--accent-color);
+    }
+    .quote-card .quote-author {
+      text-align: right;
+      font-size: 0.9rem;
+      margin-top: 8px;
+    }
+    .quote-actions {
+      margin-top: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .quote-actions button {
+      border: none;
+      background: var(--bg-color);
+      color: var(--accent-color);
+      font-size: 0;  /* 去除按钮内文本空白间距 */
+      padding: 12px;
+      border-radius: 50%;
+      box-shadow: 3px 3px 6px var(--shadow-dark),
+                  -3px -3px 6px var(--shadow-light);
+      cursor: pointer;
+    }
+    .quote-actions button:active {
+      box-shadow: inset 3px 3px 6px var(--shadow-dark),
+                  inset -3px -3px 6px var(--shadow-light);
+    }
+    /* ===== 查找点 (Map) 页面样式 ===== */
+    .map-search {
+      display: flex;
+      margin-bottom: 12px;
+    }
+    .map-search input {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      border-radius: 8px 0 0 8px;
+      background: var(--bg-color);
+      box-shadow: inset 2px 2px 5px var(--shadow-dark),
+                  inset -2px -2px 5px var(--shadow-light);
+      font-size: 0.9rem;
+    }
+    .map-search input::placeholder {
+      color: #999999;
+    }
+    .map-search button {
+      border: none;
+      background: var(--bg-color);
+      padding: 10px;
+      border-radius: 0 8px 8px 0;
+      box-shadow: 2px 2px 5px var(--shadow-dark),
+                  -2px -2px 5px var(--shadow-light);
+      cursor: pointer;
+    }
+    .map-area {
+      background: var(--bg-color);
+      border-radius: 12px;
+      height: 300px;
+      box-shadow: inset 3px 3px 6px var(--shadow-dark),
+                  inset -3px -3px 6px var(--shadow-light);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #999999;
+      font-size: 0.9rem;
+    }
+    /* ===== 情绪 (Emotion) 页面样式 ===== */
+    .chart-container {
+      background: var(--bg-color);
+      border-radius: 12px;
+      padding: 16px;
+      box-shadow: 5px 5px 10px var(--shadow-dark),
+                  -5px -5px 10px var(--shadow-light);
+    }
+    .chart-title {
+      font-size: 1rem;
+      margin-bottom: 8px;
+    }
+    .chart {
+      width: 100%;
+      overflow: visible;
+    }
+    .chart svg {
+      width: 100%;
+      height: 120px;
+    }
+    .chart svg polyline.mood-line {
+      fill: none;
+      stroke: var(--accent-color);
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-dasharray: 2000;
+      stroke-dashoffset: 2000;
+      animation: drawLine 2s ease-out forwards;
+    }
+    @keyframes drawLine {
+      to { stroke-dashoffset: 0; }
+    }
+    /* ===== 社区 (Community) 页面样式 ===== */
+    .post {
+      background: var(--bg-color);
+      border-radius: 10px;
+      padding: 12px;
+      margin-bottom: 12px;
+      box-shadow: 3px 3px 6px var(--shadow-dark),
+                  -3px -3px 6px var(--shadow-light);
+    }
+    .post .author {
+      font-weight: bold;
+      margin-bottom: 4px;
+    }
+    .post .content {
+      font-size: 0.95rem;
+      line-height: 1.4;
+    }
+    /* ===== 我 (Profile) 页面样式 ===== */
+    .profile-card {
+      display: flex;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    .avatar {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: var(--bg-color);
+      box-shadow: inset 4px 4px 8px var(--shadow-dark),
+                  inset -4px -4px 8px var(--shadow-light);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: 12px;
+      font-size: 1.5rem;
+      color: var(--accent-color);
+    }
+    .user-info .name {
+      font-size: 1.1rem;
+      font-weight: bold;
+    }
+    .user-info .email {
+      font-size: 0.9rem;
+      color: #888888;
+    }
+    .settings {
+      margin-top: 16px;
+    }
+    .setting {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--bg-color);
+      padding: 12px 16px;
+      margin-bottom: 8px;
+      border-radius: 8px;
+      box-shadow: 2px 2px 5px var(--shadow-dark),
+                  -2px -2px 5px var(--shadow-light);
+    }
+    .setting .label {
+      display: flex;
+      align-items: center;
+      font-size: 0.95rem;
+    }
+    .setting .label svg {
+      margin-right: 8px;
+    }
+    .setting button {
+      background: var(--bg-color);
+      border: none;
+      padding: 6px 12px;
+      border-radius: 6px;
+      box-shadow: 2px 2px 5px var(--shadow-dark),
+                  -2px -2px 5px var(--shadow-light);
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+    /* ===== SVG 图标样式统一 ===== */
+    .quote-actions svg,
+    .avatar svg,
+    .setting .label svg,
+    .map-search button svg {
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      fill: none;
+    }
+    .bottom-nav a svg {
+      width: 24px;
+      height: 24px;
+      margin-bottom: 4px;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      fill: none;
+    }
+    /* ===== 底部导航栏样式 ===== */
+    nav.bottom-nav {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 70px;
+      background: var(--bg-color);
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      box-shadow: 0 -3px 6px rgba(0,0,0,0.1);
+    }
+    .bottom-nav a {
+      text-decoration: none;
+      text-align: center;
+      color: var(--text-color);
+      font-size: 0.75rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 8px;
+      border-radius: 12px;
+      box-shadow: 3px 3px 5px var(--shadow-dark),
+                  -3px -3px 5px var(--shadow-light);
+    }
+    .bottom-nav a.active {
+      color: var(--accent-color);
+      box-shadow: inset 3px 3px 6px var(--shadow-dark),
+                  inset -3px -3px 6px var(--shadow-light);
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <!-- 定义 SVG Symbol 图标集 -->
+    <svg width="0" height="0" style="position:absolute;visibility:hidden;" xmlns="http://www.w3.org/2000/svg">
+      <symbol id="icon-home" viewBox="0 0 24 24">
+        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+        <polyline points="9 22 9 12 15 12 15 22"></polyline>
+      </symbol>
+      <symbol id="icon-map" viewBox="0 0 24 24">
+        <path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"></path>
+        <circle cx="12" cy="10" r="3"></circle>
+      </symbol>
+      <symbol id="icon-smile" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="10"></circle>
+        <path d="M8 14s1.5 2 4 2 4-2 4-2"></path>
+        <line x1="9" y1="9" x2="9.01" y2="9"></line>
+        <line x1="15" y1="9" x2="15.01" y2="9"></line>
+      </symbol>
+      <symbol id="icon-users" viewBox="0 0 24 24">
+        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+        <circle cx="9" cy="7" r="4"></circle>
+        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+      </symbol>
+      <symbol id="icon-user" viewBox="0 0 24 24">
+        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+        <circle cx="12" cy="7" r="4"></circle>
+      </symbol>
+      <symbol id="icon-heart" viewBox="0 0 24 24">
+        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+      </symbol>
+      <symbol id="icon-play" viewBox="0 0 24 24">
+        <polygon points="8,5 19,12 8,19" fill="currentColor"></polygon>
+      </symbol>
+      <symbol id="icon-globe" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="10"></circle>
+        <line x1="2" y1="12" x2="22" y2="12"></line>
+        <path d="M12 2a15.3 15.3 0 0 1 0 20"></path>
+        <path d="M12 2a15.3 15.3 0 0 0 0 20"></path>
+      </symbol>
+    </svg>
+    <!-- 首页 Section -->
+    <section id="home" class="active">
+      <h2 data-i18n="home.welcome">欢迎回来</h2>
+      <div class="quote-card">
+        <blockquote data-i18n="home.quoteText">当困难来临时，要么你面对它，要么你逃避它。</blockquote>
+        <div class="quote-author" data-i18n="home.quoteAuthor">— 匿名</div>
+        <div class="quote-actions">
+          <button class="play-btn" aria-label="Play Quote">
+            <svg viewBox="0 0 24 24"><use xlink:href="#icon-play"></use></svg>
+          </button>
+          <button class="fav-btn" aria-label="Save Quote">
+            <svg viewBox="0 0 24 24"><use xlink:href="#icon-heart"></use></svg>
+          </button>
+        </div>
+      </div>
+    </section>
+    <!-- 查找点 Section -->
+    <section id="map">
+      <h2 data-i18n="map.title">查找点</h2>
+      <div class="map-search">
+        <input type="text" placeholder="搜索地点" data-i18n="map.searchPlaceholder" />
+        <button aria-label="Search">
+          <svg viewBox="0 0 24 24"><use xlink:href="#icon-map"></use></svg>
+        </button>
+      </div>
+      <div class="map-area" data-i18n="map.placeholder">[ 地图区域 ]</div>
+    </section>
+    <!-- 情绪 Section -->
+    <section id="emotion">
+      <h2 data-i18n="emotion.title">情绪</h2>
+      <div class="chart-container">
+        <div class="chart-title" data-i18n="emotion.chartTitle">情绪趋势</div>
+        <div class="chart">
+          <svg xmlns="http://www.w3.org/2000/svg">
+            <polyline class="mood-line" points="0,60 55,30 110,50 165,80 220,40 275,70 330,50"></polyline>
+          </svg>
+        </div>
+      </div>
+    </section>
+    <!-- 社区 Section -->
+    <section id="community">
+      <h2 data-i18n="community.title">社区</h2>
+      <div class="post">
+        <div class="author" data-i18n="community.postAuthor1">Alice</div>
+        <div class="content" data-i18n="community.postContent1">笑一笑，明天会更好！</div>
+      </div>
+      <div class="post">
+        <div class="author" data-i18n="community.postAuthor2">Bob</div>
+        <div class="content" data-i18n="community.postContent2">今天跑了5公里，感觉很棒。</div>
+      </div>
+    </section>
+    <!-- 我的 Section -->
+    <section id="me">
+      <h2 data-i18n="me.title">我</h2>
+      <div class="profile-card">
+        <div class="avatar">
+          <svg viewBox="0 0 24 24"><use xlink:href="#icon-user"></use></svg>
+        </div>
+        <div class="user-info">
+          <div class="name" data-i18n="me.username">Luna</div>
+          <div class="email">luna@example.com</div>
+        </div>
+      </div>
+      <div class="settings">
+        <div class="setting">
+          <div class="label">
+            <svg viewBox="0 0 24 24"><use xlink:href="#icon-globe"></use></svg>
+            <span data-i18n="me.languageLabel">语言</span>
+          </div>
+          <button data-i18n="me.languageSwitch">EN</button>
+        </div>
+        <div class="setting">
+          <div class="label">
+            <svg viewBox="0 0 24 24"><use xlink:href="#icon-heart"></use></svg>
+            <span data-i18n="me.favorites">收藏的语录</span>
+          </div>
+        </div>
+        <div class="quote-card" style="padding:10px; margin-top:8px;">
+          <blockquote>要勇敢地面对每一天。</blockquote>
+          <div class="quote-author">— LunaCare</div>
+        </div>
+      </div>
+    </section>
+    <!-- 底部导航栏 -->
+    <nav class="bottom-nav">
+      <a href="#home" class="nav-item active" data-target="home">
+        <svg viewBox="0 0 24 24"><use xlink:href="#icon-home"></use></svg>
+        <span data-i18n="nav.home">首页</span>
+      </a>
+      <a href="#map" class="nav-item" data-target="map">
+        <svg viewBox="0 0 24 24"><use xlink:href="#icon-map"></use></svg>
+        <span data-i18n="nav.map">查找点</span>
+      </a>
+      <a href="#emotion" class="nav-item" data-target="emotion">
+        <svg viewBox="0 0 24 24"><use xlink:href="#icon-smile"></use></svg>
+        <span data-i18n="nav.emotion">情绪</span>
+      </a>
+      <a href="#community" class="nav-item" data-target="community">
+        <svg viewBox="0 0 24 24"><use xlink:href="#icon-users"></use></svg>
+        <span data-i18n="nav.community">社区</span>
+      </a>
+      <a href="#me" class="nav-item" data-target="me">
+        <svg viewBox="0 0 24 24"><use xlink:href="#icon-user"></use></svg>
+        <span data-i18n="nav.me">我</span>
+      </a>
+    </nav>
+  </div>
+  <script>
+    // 底部导航切换页面脚本
+    const navItems = document.querySelectorAll('.bottom-nav .nav-item');
+    const sections = document.querySelectorAll('section');
+    navItems.forEach(item => {
+      item.addEventListener('click', function(e) {
+        e.preventDefault();
+        const targetId = this.getAttribute('data-target');
+        // 清除原有激活状态
+        navItems.forEach(i => i.classList.remove('active'));
+        sections.forEach(sec => sec.classList.remove('active'));
+        // 激活当前导航项和对应的页面
+        this.classList.add('active');
+        document.getElementById(targetId).classList.add('active');
+      });
+    });
+  </script>
+</body>
+</html>
